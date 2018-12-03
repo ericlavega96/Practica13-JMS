@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Global</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="description" content="HTML5 website template">
+  <meta name="keywords" content="global, template, html, sass, jquery">
+  <meta name="author" content="Bucky Maler">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/morris.js/0.5.1/morris.css">
+</head>
+<body>
+
+<!-- notification for small viewports and landscape oriented smartphones -->
+<div class="device-notification">
+  <a class="device-notification--logo" href="#0">
+    <img src="img/logo.png" alt="Global">
+    <p>Global</p>
+  </a>
+  <p class="device-notification--message">Global has so much to offer that we must request you orient your device to portrait or find a larger screen. You won't be disappointed.</p>
+</div>
+
+<div class="perspective effect-rotate-left">
+  <div class="container"><div class="outer-nav--return"></div>
+    <div id="viewport" class="l-viewport">
+      <div class="l-wrapper">
+        <header class="header">
+          <a class="header--logo" href="#0">
+            <img src="img/logo.png" alt="Global">
+            <p>A&E SENSORS</p>
+          </a>
+          <div class="header--nav-toggle">
+            <span></span>
+          </div>
+        </header>
+        <nav class="l-side-nav">
+          <ul class="side-nav">
+            <li class="is-active"><span>Home</span></li>
+            <li><span>Temperatura</span></li>
+            <li><span>Humedad</span></li>
+          </ul>
+        </nav>
+        <ul class="l-main-content main-content">
+
+
+
+
+          <li class="l-section section section--is-active">
+            <div class="intro">
+              <div class="intro--banner">
+                <h1>Sensores de<br>Temperatura<br>y Humedad</h1>
+                <img src="img/introduction-visual.png" alt="Welcome">
+              </div>
+
+            </div>
+          </li>
+          <li class="l-section section">
+            <div class="work">
+              <h2>Temperatura</h2>
+
+              <div class="work--lockup">
+                  <canvas id="temperature-chart" style="height: 250px"></canvas>
+              </div>
+
+            </div>
+          </li>
+
+          <li class="l-section section">
+            <div class="work">
+                <h2>Humedad</h2>
+
+                <div class="work--lockup">
+                    <canvas id="humidity-chart" style="height: 250px"></canvas>
+                </div>
+            </div>
+          </li>
+
+
+        </ul>
+      </div>
+    </div>
+  </div>
+  <ul class="outer-nav">
+    <li class="is-active">Home</li>
+    <li>Temperatura</li>
+    <li>Humedad</li>
+  </ul>
+</div>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="js/vendor/jquery-2.2.4.min.js"><\/script>')</script>
+<script src="js/functions-min.js"></script>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
+
+<script>
+    window.onload = function () {
+        var temperatureURL = 'http://localhost:4567/json/temperatura',humidityURL = 'http://localhost:4567/json/humedad';
+        var tempetureCtx = document.getElementById('temperature-chart');
+        var humidityCtx = document.getElementById('humidity-chart');
+        var updateInterval = 4000;
+        var temperatureData =[],temperatureLabels=[], humidityData =[],humidityLabels=[];
+        var temperatureChart = new Chart(tempetureCtx, {
+            type: 'line',
+            data: {
+                labels: temperatureLabels,
+                datasets: [{
+                    data: temperatureData,
+                    label: "Temperatura",
+                    borderColor: "#3e95cd",
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        ticks: {
+                            fontSize: 10
+                        }
+                    }]
+                }
+            }
+        });
+
+        var humidityChart = new Chart(humidityCtx, {
+            type: 'line',
+            data: {
+                labels: humidityLabels,
+                datasets: [{
+                    data: humidityData,
+                    label: "Humedad",
+                    borderColor: "#A248D9",
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        ticks: {
+                            fontSize: 10
+                        }
+                    }]
+                }
+            }
+        });
+
+        setInterval(function(){updateChart(temperatureURL,temperatureChart);updateChart(humidityURL,humidityChart)}, updateInterval);
+
+        function updateChart(url,chart) {
+            var request = new XMLHttpRequest();
+            request.open('GET',url, true);
+
+            request.onload = function() {
+                if (request.status >= 200 && request.status < 400) {
+                    // Success!
+                    var data = JSON.parse(request.responseText);
+                    if(typeof data !== 'undefined' && data.length >0){
+                        var labelsAJAX = [],valuesAJAX = [];
+                        for(i=0; i<data.length;i++){
+                            labelsAJAX.push(data[i].fechaRecoleccion);
+                            valuesAJAX.push(data[i].valor);
+                        }
+                        if(data[0].sensor === "temperatura"){
+                            temperatureLabels = labelsAJAX;
+                            temperatureData = valuesAJAX;
+                        }else{
+                            humidityLabels = labelsAJAX;
+                            humidityData = valuesAJAX;
+
+                        }
+                        chart.data.labels = labelsAJAX;
+                        chart.data.datasets[0].data = valuesAJAX;
+                        console.log("Chart actualizado!");
+                        chart.update();
+                    }
+                } else {
+                    // We reached our target server, but it returned an error
+                    console.log("Hubo un error tras recibir el JSON");
+                }
+            };
+
+            request.onerror = function() {
+                // There was a connection error of some sort
+                console.log("Hubo un error de conexion");
+            };
+            request.send();
+        }
+    }
+</script>
+</body>
+</html>
